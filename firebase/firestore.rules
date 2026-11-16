@@ -1,0 +1,37 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function aktif() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+    function role() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+    function admin() { return aktif() && role() == 'admin'; }
+    match /users/{uid} {
+      allow read: if request.auth != null && (request.auth.uid == uid || admin());
+      allow write: if admin();
+    }
+    match /kamar/{id} {
+      allow read: if aktif();
+      allow update: if aktif();
+      allow create, delete: if admin();
+    }
+    match /pasien/{id} {
+      allow read, create, update: if aktif();
+      allow delete: if admin();
+    }
+    match /jadwalOperasi/{id} {
+      allow read, create, update: if aktif();
+      allow delete: if admin();
+    }
+    match /integrasiLog/{id} {
+      allow read, create, update: if aktif();
+      allow delete: if admin();
+    }
+    match /meta/{doc} {
+      allow read, write: if aktif();
+    }
+  }
+}
