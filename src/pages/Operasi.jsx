@@ -16,7 +16,7 @@ import EmptyState from '../components/ui/EmptyState.jsx'
 import Spinner from '../components/ui/Spinner.jsx'
 import JsonModal from '../components/JsonModal.jsx'
 
-const FORM_KOSONG = { pasienId: '', tindakan: '', tanggal: hariIni(), jam: '09:00', dokter: '', catatan: '' }
+const FORM_KOSONG = { pasienId: '', tindakan: '', tanggal: hariIni(), jam: '09:00', dokter: '', ruangOperasi: '', catatan: '' }
 
 const WARNA_STATUS = { terjadwal: 'biru', selesai: 'hijau', batal: 'merah' }
 
@@ -82,6 +82,7 @@ export default function Operasi() {
           tindakan: hasil.tindakan,
           tanggal: hasil.tanggal,
           jam: hasil.jam,
+          ruangOperasi: hasil.ruangOperasi || '',
         },
         user.uid,
       )
@@ -123,6 +124,7 @@ export default function Operasi() {
     },
     { key: 'tindakan', label: 'Tindakan' },
     { key: 'dokter', label: 'Dokter', render: (o) => o.dokter || '-' },
+    { key: 'ruangOperasi', label: 'Ruang Operasi', render: (o) => o.ruangOperasi || '-' },
     {
       key: 'status',
       label: 'Status',
@@ -269,6 +271,20 @@ export default function Operasi() {
               className={gayaInput}
               placeholder="Nama dokter"
             />
+          </FormField>
+
+          <FormField label="Ruang Operasi">
+            <select
+              value={form.ruangOperasi}
+              onChange={(e) => setForm({ ...form, ruangOperasi: e.target.value })}
+              className={gayaInput}
+            >
+              <option value="">Pilih ruang…</option>
+              <option value="OK 1">OK 1</option>
+              <option value="OK 2">OK 2</option>
+              <option value="OK 3">OK 3</option>
+              <option value="ICU">ICU</option>
+            </select>
           </FormField>
 
           <FormField label="Catatan">

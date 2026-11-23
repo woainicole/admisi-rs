@@ -51,8 +51,17 @@ export default function Kamar() {
     }
   }, [])
 
+  // Map: pasien doc id → pasien object (untuk cek status aktif)
+  const penghuni = useMemo(
+    () => Object.fromEntries(pasien.map((p) => [p.id, p])),
+    [pasien],
+  )
   const namaPenghuni = useMemo(
-    () => Object.fromEntries(pasien.map((p) => [p.id, p.nama])),
+    () => Object.fromEntries(
+      pasien
+        .filter((p) => p.status === 'dirawat')
+        .map((p) => [p.id, p.nama])
+    ),
     [pasien],
   )
 
@@ -146,9 +155,18 @@ export default function Kamar() {
                             {k.bangsal} {k.nomor}
                           </p>
                           <p className="text-xs text-slate-500">
-                            {k.status === 'terisi'
-                              ? namaPenghuni[k.pasienId] || 'Penghuni tidak ditemukan'
-                              : 'Kosong'}
+                            {k.status === 'terisi' ? (
+                              namaPenghuni[k.pasienId]
+                                ? <>
+                                    {namaPenghuni[k.pasienId]}
+                                    {penghuni[k.pasienId]?.noRm && (
+                                      <span className="ml-1 text-slate-400">({penghuni[k.pasienId].noRm})</span>
+                                    )}
+                                  </>
+                                : penghuni[k.pasienId]
+                                  ? <span className="text-amber-600">Sudah pulang (data belum sync)</span>
+                                  : <span className="text-red-500">Pasien tidak ditemukan</span>
+                            ) : 'Kosong'}
                           </p>
                         </div>
                         <Badge warna={k.status === 'terisi' ? 'hijau' : 'abu'}>{k.status}</Badge>

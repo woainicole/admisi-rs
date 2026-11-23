@@ -10,7 +10,7 @@ import {
   subscribePasien,
   ubahPasien,
 } from '../services/pasienService.js'
-import { kirimKeluar, subscribeLog } from '../services/integrasiService.js'
+import { kirimKeluarSeamless, subscribeLog } from '../services/integrasiService.js'
 import PageHeader from '../components/ui/PageHeader.jsx'
 import Button from '../components/ui/Button.jsx'
 import Badge from '../components/ui/Badge.jsx'
@@ -264,18 +264,20 @@ export default function Pasien() {
     try {
       if (pasienEdit) {
         const hasil = await ubahPasien(pasienEdit, dataForm(), user.uid)
-        const event = await kirimKeluar('pasien.diperbarui', dataPasienKeluar(hasil), user.uid)
+        const { event, ok, pesan } = await kirimKeluarSeamless('pasien.diperbarui', dataPasienKeluar(hasil), user.uid)
         setEventTerakhir(event)
         setJsonData(event)
         setJsonBuka(true)
-        toast.success('Data siap diteruskan. Buka ekstensi browser untuk memilih tujuan.')
+        if (ok) toast.success(`Data pasien dikirim ke NutriSmart: ${pesan}`)
+        else toast(`Data disiapkan — NutriSmart tidak terjangkau: ${pesan}`, { icon: '⚠️' })
       } else {
         const baru = await daftarkanPasien(dataForm(), user.uid)
-        const event = await kirimKeluar('pasien.masuk', dataPasienKeluar(baru), user.uid)
+        const { event, ok, pesan } = await kirimKeluarSeamless('pasien.masuk', dataPasienKeluar(baru), user.uid)
         setEventTerakhir(event)
         setJsonData(event)
         setJsonBuka(true)
-        toast.success(`Pasien ${baru.noRm} terdaftar. Data siap diteruskan.`)
+        if (ok) toast.success(`Pasien ${baru.noRm} terdaftar dan dikirim ke NutriSmart.`)
+        else toast(`Pasien ${baru.noRm} terdaftar — NutriSmart tidak terjangkau: ${pesan}`, { icon: '⚠️' })
       }
       setFormBuka(false)
       setForm(FORM_KOSONG)
@@ -291,8 +293,9 @@ export default function Pasien() {
     setProsesPulang(true)
     try {
       const hasil = await pulangkanPasien(pulang)
-      await kirimKeluar('pasien.pulang', { noRm: hasil.noRm, tglPulang: hasil.tglPulang }, user.uid)
-      toast.success(`Pasien ${hasil.noRm} dipulangkan. Data siap diteruskan.`)
+      const { ok, pesan } = await kirimKeluarSeamless('pasien.pulang', { noRm: hasil.noRm, tglPulang: hasil.tglPulang }, user.uid)
+      if (ok) toast.success(`Pasien ${hasil.noRm} dipulangkan dan dikirim ke NutriSmart.`)
+      else toast(`Pasien ${hasil.noRm} dipulangkan — NutriSmart tidak terjangkau: ${pesan}`, { icon: '⚠️' })
       setPulang(null)
     } catch (err) {
       toast.error(err.message)

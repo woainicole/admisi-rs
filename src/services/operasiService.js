@@ -39,6 +39,7 @@ export async function jadwalkanOperasi(form) {
     tanggal: form.tanggal,
     jam: form.jam,
     dokter: (form.dokter || '').trim(),
+    ruangOperasi: (form.ruangOperasi || '').trim(),
     status: 'terjadwal',
     catatan: (form.catatan || '').trim(),
     createdAt: serverTimestamp(),

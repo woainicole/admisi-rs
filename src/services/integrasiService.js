@@ -117,3 +117,68 @@ export async function catatAckBalik(eventId, ok, pesan) {
     pesan: pesan || (ok ? 'Diterima tujuan.' : 'Ditolak tujuan.'),
   })
 }
+
+// ─── Transfer seamless ke NutriSmart (tanpa ekstensi) ───────────────────
+
+const SUPA_URL = import.meta.env.VITE_NUTRISMART_SUPABASE_URL
+const SUPA_KEY = import.meta.env.VITE_NUTRISMART_SUPABASE_ANON_KEY
+
+/**
+ * Kirim event langsung ke Supabase RPC NutriSmart tanpa ekstensi.
+ * Gunakan ini selain/sebagai pengganti postingKeluar().
+ * @returns {{ ok: boolean, pesan: string }}
+ */
+export async function kirimKeNutriSmart(event) {
+  if (!SUPA_URL || !SUPA_KEY) {
+    return { ok: false, pesan: 'VITE_NUTRISMART_SUPABASE_URL/KEY belum dikonfigurasi.' }
+  }
+  try {
+    const res = await fetch(`${SUPA_URL}/rest/v1/rpc/terima_event_integrasi`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPA_KEY,
+        'Authorization': `Bearer ${SUPA_KEY}`,
+      },
+      body: JSON.stringify({ p_event: event }),
+    })
+    if (!res.ok) {
+      const teks = await res.text()
+      return { ok: false, pesan: `HTTP ${res.status}: ${teks}` }
+    }
+    const hasil = await res.json()
+    return hasil  // { ok, pesan, status, ... }
+  } catch (e) {
+    return { ok: false, pesan: 'Gagal menghubungi NutriSmart: ' + e.message }
+  }
+}
+
+/**
+ * Kirim event keluar AND langsung teruskan ke NutriSmart (seamless).
+ * Menulis log dengan status akhir dari NutriSmart, bukan "menunggu".
+ */
+export async function kirimKeluarSeamless(jenis, data, uid) {
+  const event = buatEvent(jenis, data)
+
+  // Kirim ke NutriSmart
+  const hasil = await kirimKeNutriSmart(event)
+  const status = hasil?.ok ? 'diterima' : 'gagal'
+  const pesan = hasil?.pesan ?? 'Tidak ada respons dari NutriSmart.'
+
+  // Catat log
+  await setDoc(doc(db, LOG, event.eventId), {
+    arah: 'keluar',
+    jenis,
+    mitra: 'nutrismart',
+    status,
+    pesan,
+    noRm: data?.noRm ?? null,
+    event,
+    createdAt: serverTimestamp(),
+    oleh: uid,
+  })
+
+  // Juga emit postMessage agar ekstensi (jika ada) tetap bisa menangkap
+  postingKeluar(event)
+  return { event, ...hasil }
+}
