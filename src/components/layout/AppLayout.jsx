@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import Sidebar from './Sidebar.jsx'
 import Topbar from './Topbar.jsx'
+import AppSwitcher from '../ui/AppSwitcher.jsx'
 
 export default function AppLayout() {
   const [menuBuka, setMenuBuka] = useState(false)
@@ -28,6 +29,9 @@ export default function AppLayout() {
           <Outlet />
         </main>
       </div>
+
+      {/* Floating switcher — jendela ke NutriSmart */}
+      <AppSwitcher />
     </div>
   )
 }
